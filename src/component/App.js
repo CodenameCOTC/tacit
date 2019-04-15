@@ -1,33 +1,10 @@
-import React from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useState } from "react";
+import { StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 
 import Header from "./Header";
 import Content from "./Content";
-
-const fakeData = {
-  description: "A man drinking a coffee.",
-  user: {
-    username: "kingqu",
-    profile_image: {
-      small:
-        "http://tes77.com/wp-content/uploads/2017/10/dark-chocolate-bar-squares.jpg",
-      medium:
-        "https://images.unsplash.com/face-springmorning.jpg?q=80&fm=jpg&crop=faces&fit=crop&h=64&w=64",
-      large:
-        "https://images.unsplash.com/face-springmorning.jpg?q=80&fm=jpg&crop=faces&fit=crop&h=128&w=128"
-    }
-  },
-  urls: {
-    raw: "https://images.unsplash.com/face-springmorning.jpg",
-    full: "https://images.unsplash.com/face-springmorning.jpg?q=75&fm=jpg",
-    regular:
-      "http://tes77.com/wp-content/uploads/2017/10/dark-chocolate-bar-squares.jpg",
-    small:
-      "https://images.unsplash.com/face-springmorning.jpg?q=75&fm=jpg&w=400&fit=max",
-    thumb:
-      "https://images.unsplash.com/face-springmorning.jpg?q=75&fm=jpg&w=200&fit=max"
-  }
-};
+import SearchInput from "./SearchInput";
+import request from "../lib/request";
 
 const styles = StyleSheet.create({
   container: {
@@ -37,12 +14,41 @@ const styles = StyleSheet.create({
 });
 
 function App() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [images, setImages] = useState([]);
+
+  const fetchImages = async () => {
+    setIsLoading(true);
+    const res = await request.get("/search/photos", {
+      params: { query: searchInput }
+    });
+    const { results } = await res.data;
+    setTimeout(() => {
+      setIsLoading(false);
+      setImages(results);
+    }, 3000);
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Header />
-      <Content data={fakeData} />
-      <Content data={fakeData} />
-    </View>
+      <SearchInput
+        value={searchInput}
+        onChangeText={setSearchInput}
+        fetchImages={fetchImages}
+      />
+      {isLoading && (
+        <ActivityIndicator
+          size="large"
+          color="#d5ad7d"
+          style={{ marginTop: 25, alignSelf: "center" }}
+        />
+      )}
+      {images.map(image => (
+        <Content data={image} key={image.id} />
+      ))}
+    </ScrollView>
   );
 }
 
